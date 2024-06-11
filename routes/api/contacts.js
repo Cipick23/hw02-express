@@ -1,17 +1,11 @@
-import { Router } from "express";
+import express from "express";
 import ContactController from "../../controller/contactController.js";
 import Joi from "joi";
-import { isValidObjectId } from "mongoose";
+import "../../passport.js";
+import AuthController from "../../controller/authController.js";
+import { STATUS_CODES } from "../../utils/constants.js";
 
-const router = Router();
-
-const STATUS_CODES = {
-  success: 200,
-  created: 201,
-  deleted: 204,
-  error: 500,
-  notFound: 404,
-};
+const router = express.Router();
 
 function checkPhone(value) {
   return /^(\(\d{3}\)\s\d{3}-\d{4})$/.test(value);
@@ -54,10 +48,10 @@ const updateFavoriteSchema = Joi.object({
 function validateId(req, res, next) {
   const { contactId } = req.params;
   if (!isValidObjectId(contactId)) {
-    return res.status(404).json({
+    return res.status(STATUS_CODES.notFound).json({
       status: "error",
       message: "Invalid contact ID",
-      data: "Not Found",
+      data: "not Found",
     });
   }
   next();
@@ -73,9 +67,11 @@ function validateBody(schema) {
   };
 }
 
-router.get("/", async (req, res) => {
+// GET localhost:3000/api/contacts
+router.get("/", AuthController.validateAuth, async (req, res) => {
   try {
     const contacts = await ContactController.listContacts();
+
     res.status(STATUS_CODES.success).json({
       message: "Lista a fost returnată cu succes",
       data: contacts,
