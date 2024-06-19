@@ -10,7 +10,6 @@ const ContactController = {
 };
 
 async function listContacts() {
-  console.log("--- List Contacts ---");
   try {
     return Contact.find();
   } catch (error) {
@@ -19,7 +18,6 @@ async function listContacts() {
 }
 
 async function getContactById(id) {
-  console.log(`--- List Contact by id #${id} ---`);
   try {
     return Contact.findById(id);
   } catch (error) {

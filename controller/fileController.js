@@ -1,3 +1,4 @@
+// FileController.js
 import multer from "multer";
 import Jimp from "jimp";
 import fs from "fs";
@@ -7,7 +8,6 @@ import User from "../models/user.js";
 const storage = multer.diskStorage({
   destination: "tmp/",
   filename: function (_req, file, cb) {
-    // console.log(req.file.filename)
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, file.fieldname + "-" + uniqueSuffix);
   },
@@ -15,16 +15,14 @@ const storage = multer.diskStorage({
 const uploadFile = multer({ storage: storage }).single("avatar");
 
 async function processAvatar(req, res) {
-  console.dir(req);
-  console.dir(res);
-  const userId = req.user.id; // Obține ID-ul utilizatorului (presupunând că ai middleware de autentificare)
+  console.log(req.user);
+  const userId = req.user.id; // Obține ID-ul utilizatorului
 
+  console.log(userId);
   try {
-    // Procesează avatarul cu Jimp
     const avatar = await Jimp.read(req.file.path);
-    avatar.resize(250, 250).quality(80).write(req.file.path);
+    await avatar.resize(250, 250).quality(80).writeAsync(req.file.path);
 
-    // Mută avatarul în public/avatars
     const newFilename = `${userId}_${Date.now()}${path.extname(
       req.file.originalname
     )}`;
@@ -35,7 +33,6 @@ async function processAvatar(req, res) {
     const result = {
       avatarUrl: newPath,
     };
-
     return result;
   } catch (error) {
     throw new Error(`${error}`);

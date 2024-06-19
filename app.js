@@ -1,3 +1,4 @@
+// app.js
 import express from "express";
 import logger from "morgan";
 import cors from "cors";
@@ -20,7 +21,7 @@ app.use("/api/contacts", contactsRouter);
 app.use("/api/users", authRouter);
 
 app.use((req, res) => {
-  res.status(404).json({ message: "Not found" });
+  res.status(STATUS_CODES.notFound).json({ message: "Not found" });
 });
 
 app.use((err, req, res, next) => {

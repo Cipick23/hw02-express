@@ -1,3 +1,4 @@
+// auth.js
 import express from "express";
 import AuthController from "../../controller/authController.js";
 import { STATUS_CODES } from "../../utils/constants.js";
@@ -6,8 +7,8 @@ import FileController from "../../controller/fileController.js";
 
 const router = express.Router();
 
-// POST localhost:3000/users/login;
-router.post("/login", async (req, res, next) => {
+// POST localhost:3000/users/login
+router.post("/login", async (req, res) => {
   try {
     const isValid = checkLoginPayload(req.body);
     if (!isValid) {
@@ -15,11 +16,10 @@ router.post("/login", async (req, res, next) => {
     }
 
     const { email, password } = req.body;
-
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(STATUS_CODES.NoContent).json({
+      return res.status(STATUS_CODES.unauthorized).json({
         status: "error",
         code: 401,
         message: "Username or password is not correct",
@@ -29,16 +29,17 @@ router.post("/login", async (req, res, next) => {
 
     const token = await AuthController.login({ email, password });
 
-    res
-      .status(STATUS_CODES.success)
-      .json({ message: "Utilizatorul a fost logat cu succes", token: token });
+    res.status(STATUS_CODES.success).json({
+      message: "Utilizatorul a fost logat cu succes",
+      token: token,
+    });
   } catch (error) {
     respondWithError(res, error, STATUS_CODES.error);
   }
 });
 
-// POST localhost:3000/users/signup;
-router.post("/signup", async (req, res, next) => {
+// POST localhost:3000/users/signup
+router.post("/signup", async (req, res) => {
   try {
     const isValid = checkSignupPayload(req.body);
 
@@ -67,18 +68,18 @@ router.post("/signup", async (req, res, next) => {
 
     res.status(201).json({ message: "Utilizatorul a fost creat" });
   } catch (error) {
-    throw new Error(error);
+    respondWithError(res, error, STATUS_CODES.error);
   }
 });
 
-// GET localhost:3000/api/users/logout/
-router.get("/logout", AuthController.validateAuth, async (req, res, next) => {
+// GET localhost:3000/api/users/logout
+router.get("/logout", AuthController.validateAuth, async (req, res) => {
   try {
     const header = req.get("authorization");
     if (!header) {
       throw new Error("E nevoie de autentificare pentru aceasta ruta.");
     }
-    console.log("Token");
+
     const token = header.split(" ")[1];
     const payload = AuthController.getPayloadFromJWT(token);
 
@@ -86,7 +87,7 @@ router.get("/logout", AuthController.validateAuth, async (req, res, next) => {
 
     res.status(204).send();
   } catch (error) {
-    throw new Error(error);
+    respondWithError(res, error, STATUS_CODES.error);
   }
 });
 
@@ -95,7 +96,6 @@ router.get("/current", AuthController.validateAuth, async (req, res) => {
   try {
     const user = req.user;
 
-    // Respond with user data
     res.status(200).json({
       email: user.email,
       subscription: user.subscription,
@@ -105,46 +105,44 @@ router.get("/current", AuthController.validateAuth, async (req, res) => {
   }
 });
 
-// PATCH localhost:3000/api/users/avatars;
+// PATCH localhost:3000/api/users/avatars
 router.patch(
-  "/users/avatars",
+  "/avatars",
   [AuthController.validateAuth, FileController.uploadFile],
   async (req, res) => {
     try {
+      console.log("Req user:", req.user); // Log user info
       const response = await FileController.processAvatar(req, res);
       res.status(STATUS_CODES.success).json(response);
     } catch (error) {
+      console.log("Error in patch route:", error);
       respondWithError(res, error, STATUS_CODES.error);
     }
-    // console.log(req.file);
   }
 );
 
-// validate contact body
+// validate login payload
 function checkLoginPayload(data) {
   if (!data?.email || !data?.password) {
     return false;
   }
-
   return true;
 }
 
-// validate contact body
+// validate signup payload
 function checkSignupPayload(data) {
   if (!data?.email || !data?.password) {
     return false;
   }
-
-  if (data?.password > 8) {
+  if (data?.password.length < 8) {
     return false;
   }
-
   return true;
 }
 
-// error cases
+// error response
 function respondWithError(res, error, statusCode) {
-  console.error(error);
+  console.error("Error handler:", error);
   res.status(statusCode).json({ message: `${error}` });
 }
 
