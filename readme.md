@@ -1,3 +1,11 @@
+## hw04-auth
+
+https://monosnap.com/list/666879acf327542cdbff0d42
+
+## hw05-avatars
+
+https://monosnap.com/list/6672aa49c619782997272bdf
+
 ## GoIT Node.js Course Template Homework
 
 Realizează un fork al acestui repozitoriu pentru a îndeplini temele de acasă (2-6). Fork-ul va crea un repozitoriu pe contul tău de pe http://github.com
