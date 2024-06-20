@@ -121,6 +121,31 @@ router.patch(
   }
 );
 
+// GET /api/auth/verify/:verificationToken
+router.get("/users/verify/:verificationToken", async (req, res) => {
+  const token = req.params.verificationToken;
+  const hasUser = await AuthController.getUserByValidationToken(token);
+
+  if (hasUser) {
+    try {
+      await User.findOneAndUpdate(
+        { verificationToken: token },
+        { verify: true }
+      );
+    } catch (error) {
+      throw new Error(
+        "The username could not be found or it was already validated."
+      );
+    }
+
+    res.status(200).send({
+      message: "Verification successful",
+    });
+  } else {
+    respondWithError(res, new Error("User not found"), STATUS_CODES.error);
+  }
+});
+
 // validate login payload
 function checkLoginPayload(data) {
   if (!data?.email || !data?.password) {
