@@ -75,30 +75,18 @@ function getPayloadFromJWT(token) {
 }
 
 export function validateAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  jwt.verify(token, secretForToken, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: "Invalid token" });
+  passport.authenticate("jwt", { session: false }, (err, user) => {
+    if (!user || err) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Unauthorized",
+        data: "Unauthorized",
+      });
     }
-
-    User.findById(decoded.data._id)
-      .then((user) => {
-        if (!user) {
-          return res.status(401).json({ message: "User not found" });
-        }
-
-        req.user = user;
-        next();
-      })
-      .catch(next);
-  });
+    req.user = user;
+    next();
+  })(req, res, next);
 }
 
 export async function getUserByValidationToken(token) {

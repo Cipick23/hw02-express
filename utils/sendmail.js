@@ -5,16 +5,16 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const { OUTLOOK_EMAIL, OUTLOOK_PASSWORD } = process.env;
+const { EMAIL_FROM, EMAIL_PASSWORD } = process.env;
 
 export default async function sendEmailTo(email, token) {
   const nodemailerConfig = {
-    host: "smtp.office365.com",
-    port: 587,
-    secure: false,
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
     auth: {
-      user: OUTLOOK_EMAIL,
-      pass: OUTLOOK_PASSWORD,
+      user: EMAIL_FROM,
+      pass: EMAIL_PASSWORD,
     },
   };
   const host = process.env.HOSTNAME;
@@ -23,8 +23,8 @@ export default async function sendEmailTo(email, token) {
   let transporter = nodemailer.createTransport(nodemailerConfig);
 
   let mailOptions = {
+    from: "tzutzuthekid@gmail.com;", // Use the email address or domain you verified above
     to: email,
-    from: "PaulCiprianR@outlook.com", // Use the email address or domain you verified above
     subject: "Hello from ContactApp!",
     text: `and easy to do anywhere, even with Node.js`,
     html: `Hello from <strong>ContactApp</strong> <br /><a href="${verificationLink}/api/users/verify/:verificationToken/verify/${token}">${verificationLink}}</a> to validate your account. <br />`,
