@@ -36,7 +36,7 @@ async function login(data) {
     await User.findOneAndUpdate({ email: email }, { token: token });
     return token;
   } else {
-    throw new Error("Username is not matching");
+    throw new Error("Email is not matching");
   }
 }
 
@@ -63,14 +63,16 @@ async function signup(data) {
 async function updateToken(email, token) {
   token = token || uuidv4();
   await User.findOneAndUpdate({ email }, { verificationToken: token });
-  sendWithSendGrid(email, token);
+  sendEmailTo(email, token);
 }
 
 function getPayloadFromJWT(token) {
   try {
-    return jwt.verify(token, secretForToken);
+    const payload = jwt.verify(token, secretForToken);
+
+    return payload;
   } catch (err) {
-    throw new Error("Invalid Token");
+    console.error(err);
   }
 }
 
@@ -90,7 +92,7 @@ export function validateAuth(req, res, next) {
 }
 
 export async function getUserByValidationToken(token) {
-  const user = await User.findOne({ verificationToken: token });
+  const user = await User.findOne({ verificationToken: token, verify: false });
 
   if (user) {
     return true;

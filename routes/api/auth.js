@@ -8,7 +8,7 @@ import FileController from "../../controller/fileController.js";
 const router = express.Router();
 
 // POST localhost:3000/users/login
-router.post("/login", async (req, res) => {
+router.post("/login", async (req, res, next) => {
   try {
     const isValid = checkLoginPayload(req.body);
     if (!isValid) {
@@ -22,7 +22,7 @@ router.post("/login", async (req, res) => {
       return res.status(STATUS_CODES.unauthorized).json({
         status: "error",
         code: 401,
-        message: "Username or password is not correct",
+        message: "Email or password is not correct",
         data: "Conflict",
       });
     }
@@ -32,14 +32,19 @@ router.post("/login", async (req, res) => {
     res.status(STATUS_CODES.success).json({
       message: "Utilizatorul a fost logat cu succes",
       token: token,
+      user: {
+        email: user.email,
+        subscription: user.subscription,
+        avatarURL: user.avatarURL,
+      },
     });
   } catch (error) {
     respondWithError(res, error, STATUS_CODES.error);
   }
 });
 
-// POST localhost:3000/users/signup
-router.post("/signup", async (req, res) => {
+// POST localhost:3000/api/users/signup
+router.post("/signup", async (req, res, next) => {
   try {
     const isValid = checkSignupPayload(req.body);
 
@@ -121,8 +126,8 @@ router.patch(
   }
 );
 
-// GET /api/auth/verify/:verificationToken
-router.get("/users/verify/:verificationToken", async (req, res) => {
+// GET /api/users/verify/:verificationToken
+router.get("/verify/:verificationToken", async (req, res) => {
   const token = req.params.verificationToken;
   const hasUser = await AuthController.getUserByValidationToken(token);
 
@@ -143,6 +148,25 @@ router.get("/users/verify/:verificationToken", async (req, res) => {
     });
   } else {
     respondWithError(res, new Error("User not found"), STATUS_CODES.error);
+  }
+});
+
+// POST /users/auth/verify
+router.post("/verify", async (req, res) => {
+  try {
+    const isValid = req.body?.email;
+    const email = req.body?.email;
+
+    if (isValid) {
+      AuthController.updateToken(email);
+      res.status(200).json({
+        message: "Verification email sent",
+      });
+    } else {
+      throw new Error("The email field is required");
+    }
+  } catch (error) {
+    respondWithError(res, error, STATUS_CODES.error);
   }
 });
 
