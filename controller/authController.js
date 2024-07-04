@@ -4,7 +4,7 @@ import "dotenv/config";
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import passport from "passport";
-import { STATUS_CODES } from "../utils/constants.js";
+// import { STATUS_CODES } from "../utils/constants.js";
 import gravatar from "gravatar";
 import { v4 as uuidv4 } from "uuid";
 import sendEmailTo from "../utils/sendmail.js";
