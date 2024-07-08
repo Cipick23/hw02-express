@@ -22,7 +22,7 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("chat-text-received", data);
   });
 
-  socket.on("contact-added", (data) => {
+  socket.on("Product-added", (data) => {
     socket.broadcast.emit("product-added", data);
   });
 });

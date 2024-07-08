@@ -1,5 +1,6 @@
-// auth.js
 import express from "express";
+import swaggerJsdoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 import AuthController from "../../controller/authController.js";
 import { STATUS_CODES } from "../../utils/constants.js";
 import User from "../../models/user.js";
@@ -7,7 +8,106 @@ import FileController from "../../controller/fileController.js";
 
 const router = express.Router();
 
-// POST localhost:3000/users/login
+// Configurare Swagger
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "User Authentication API",
+      version: "1.0.0",
+      description: "API pentru autentificarea și înregistrarea utilizatorilor",
+    },
+  },
+  apis: ["./routes/api/auth.js"], // Specificarea calei către fișierele cu rutare
+};
+
+const specs = swaggerJsdoc(options);
+
+// Middleware pentru a afișa documentația Swagger-ului
+router.use("/api-docs", swaggerUi.serve);
+router.get("/api-docs", swaggerUi.setup(specs));
+
+// Middleware pentru a verifica payload-ul de login
+function checkLoginPayload(data) {
+  if (!data?.email || !data?.password) {
+    return false;
+  }
+  return true;
+}
+
+// Middleware pentru a verifica payload-ul de signup
+function checkSignupPayload(data) {
+  if (!data?.email || !data?.password) {
+    return false;
+  }
+  if (data?.password.length < 8) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - email
+ *         - password
+ *       properties:
+ *         email:
+ *           type: string
+ *           description: The user's email address.
+ *         password:
+ *           type: string
+ *           description: The user's password.
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         status:
+ *           type: string
+ *         code:
+ *           type: number
+ *         message:
+ *           type: string
+ *         data:
+ *           type: string
+ */
+
+// POST /api/users/login
+/**
+ * @swagger
+ * /api/users/login:
+ *   post:
+ *     summary: Log in a user.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       200:
+ *         description: Successfully logged in.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post("/login", async (req, res, next) => {
   try {
     const isValid = checkLoginPayload(req.body);
@@ -30,7 +130,7 @@ router.post("/login", async (req, res, next) => {
     const token = await AuthController.login({ email, password });
 
     res.status(STATUS_CODES.success).json({
-      message: "Utilizatorul a fost logat cu succes",
+      message: "User logged in successfully",
       token: token,
       user: {
         email: user.email,
@@ -43,7 +143,41 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
-// POST localhost:3000/api/users/signup
+// POST /api/users/signup
+/**
+ * @swagger
+ * /api/users/signup:
+ *   post:
+ *     summary: Sign up a new user.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/User'
+ *     responses:
+ *       201:
+ *         description: User created successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Incorrect login or password.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Email is already in use.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post("/signup", async (req, res, next) => {
   try {
     const isValid = checkSignupPayload(req.body);
@@ -71,18 +205,27 @@ router.post("/signup", async (req, res, next) => {
 
     await AuthController.signup({ email, password });
 
-    res.status(201).json({ message: "Utilizatorul a fost creat" });
+    res.status(201).json({ message: "User created successfully" });
   } catch (error) {
     respondWithError(res, error, STATUS_CODES.error);
   }
 });
 
-// GET localhost:3000/api/users/logout
+// GET /api/users/logout
+/**
+ * @swagger
+ * /api/users/logout:
+ *   get:
+ *     summary: Log out the current user.
+ *     responses:
+ *       204:
+ *         description: Successfully logged out.
+ */
 router.get("/logout", AuthController.validateAuth, async (req, res) => {
   try {
     const header = req.get("authorization");
     if (!header) {
-      throw new Error("E nevoie de autentificare pentru aceasta ruta.");
+      throw new Error("Authentication is required for this route.");
     }
 
     const token = header.split(" ")[1];
@@ -96,7 +239,20 @@ router.get("/logout", AuthController.validateAuth, async (req, res) => {
   }
 });
 
-// GET localhost:3000/api/users/current
+// GET /api/users/current
+/**
+ * @swagger
+ * /api/users/current:
+ *   get:
+ *     summary: Get current user information.
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved current user information.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ */
 router.get("/current", AuthController.validateAuth, async (req, res) => {
   try {
     const user = req.user;
@@ -110,7 +266,30 @@ router.get("/current", AuthController.validateAuth, async (req, res) => {
   }
 });
 
-// PATCH localhost:3000/api/users/avatars
+// PATCH /api/users/avatars
+/**
+ * @swagger
+ * /api/users/avatars:
+ *   patch:
+ *     summary: Update user avatar.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Avatar updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ */
 router.patch(
   "/avatars",
   [AuthController.validateAuth, FileController.uploadFile],
@@ -127,6 +306,35 @@ router.patch(
 );
 
 // GET /api/users/verify/:verificationToken
+/**
+ * @swagger
+ * /api/users/verify/{verificationToken}:
+ *   get:
+ *     summary: Verify user by verification token.
+ *     parameters:
+ *       - in: path
+ *         name: verificationToken
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The verification token received by email.
+ *     responses:
+ *       200:
+ *         description: User verified successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: User not found or verification token invalid.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get("/verify/:verificationToken", async (req, res) => {
   const token = req.params.verificationToken;
   const hasUser = await AuthController.getUserByValidationToken(token);
@@ -137,21 +345,52 @@ router.get("/verify/:verificationToken", async (req, res) => {
         { verificationToken: token },
         { verify: true }
       );
+
+      res.status(200).send({
+        message: "Verification successful",
+      });
     } catch (error) {
       throw new Error(
         "The username could not be found or it was already validated."
       );
     }
-
-    res.status(200).send({
-      message: "Verification successful",
-    });
   } else {
     respondWithError(res, new Error("User not found"), STATUS_CODES.error);
   }
 });
 
-// POST /users/auth/verify
+// POST /api/users/verify
+/**
+ * @swagger
+ * /api/users/verify:
+ *   post:
+ *     summary: Send verification email to user.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Verification email sent successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Email field is required.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post("/verify", async (req, res) => {
   try {
     const isValid = req.body?.email;
@@ -170,26 +409,7 @@ router.post("/verify", async (req, res) => {
   }
 });
 
-// validate login payload
-function checkLoginPayload(data) {
-  if (!data?.email || !data?.password) {
-    return false;
-  }
-  return true;
-}
-
-// validate signup payload
-function checkSignupPayload(data) {
-  if (!data?.email || !data?.password) {
-    return false;
-  }
-  if (data?.password.length < 8) {
-    return false;
-  }
-  return true;
-}
-
-// error response
+// Funcție pentru a răspunde cu eroare
 function respondWithError(res, error, statusCode) {
   console.error("Error handler:", error);
   res.status(statusCode).json({ message: `${error}` });

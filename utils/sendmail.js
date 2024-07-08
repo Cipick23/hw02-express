@@ -21,8 +21,8 @@ export default async function sendEmailTo(email, token) {
     from: "ciprianpaulr@outlook.com",
     to: email,
     subject: "Hello",
-    text: `Hello from phoneBookApp. Use this link to validate your account: ${verificationLink}`,
-    html: `Hello from <strong>phoneBookApp</strong><br><a href="${verificationLink}">${verificationLink}</a> to validate your account.<br>`,
+    text: `Hello from SlimMomApp. Use this link to validate your account: ${verificationLink}`,
+    html: `Hello from <strong>slimMomApp</strong><br><a href="${verificationLink}">${verificationLink}</a> to validate your account.<br>`,
   };
 
   try {
