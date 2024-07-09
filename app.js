@@ -20,12 +20,12 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "User Diary API",
+      title: "User Authentication API",
       version: "1.0.0",
-      description: "API pentru gestionarea jurnalului utilizatorului",
+      description: "API pentru autentificarea și înregistrarea utilizatorilor",
     },
   },
-  apis: ["./routes/api/publicDiary.js"], // Specificarea calei către fișierele cu rutare
+  apis: ["./routes/api/auth.js"], // Specificarea calei către fișierele cu rutare
 };
 
 const specs = swaggerJsdoc(options);

@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import app from "./app.js";
 
-const httpServer = app.listen(3000, () => {
+const httpServer = app.listen(3001, () => {
   console.log("Server is running. Use our API on port: 3000");
 });
 
