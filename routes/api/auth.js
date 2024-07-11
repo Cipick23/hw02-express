@@ -1,3 +1,5 @@
+// auth.js
+
 import express from "express";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
@@ -112,7 +114,12 @@ router.post("/login", async (req, res, next) => {
   try {
     const isValid = checkLoginPayload(req.body);
     if (!isValid) {
-      throw new Error("The login request is invalid.");
+      return res.status(400).json({
+        status: "error",
+        code: 400,
+        message: "The login request is invalid.",
+        data: "Bad Request",
+      });
     }
 
     const { email, password } = req.body;
@@ -139,7 +146,13 @@ router.post("/login", async (req, res, next) => {
       },
     });
   } catch (error) {
-    respondWithError(res, error, STATUS_CODES.error);
+    console.error("Error during login:", error); // Debugging line
+    res.status(STATUS_CODES.error).json({
+      status: "error",
+      code: 500,
+      message: "Internal Server Error",
+      data: error.message,
+    });
   }
 });
 
@@ -203,11 +216,16 @@ router.post("/signup", async (req, res, next) => {
       });
     }
 
-    await AuthController.signup({ email, password });
+    const token = await AuthController.signup(req.body);
 
-    res.status(201).json({ message: "User created successfully" });
+    return res.status(201).json({
+      status: "success",
+      code: 201,
+      message: "User registered successfully",
+      data: { token }, // Returnăm token-ul
+    });
   } catch (error) {
-    respondWithError(res, error, STATUS_CODES.error);
+    next(error);
   }
 });
 

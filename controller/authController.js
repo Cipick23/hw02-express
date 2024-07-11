@@ -15,7 +15,7 @@ const AuthController = {
   validateAuth,
   getPayloadFromJWT,
   getUserByValidationToken,
-  updateToken,
+  // updateToken,
 };
 
 const secretForToken = process.env.TOKEN_SECRET;
@@ -32,6 +32,17 @@ async function login(data) {
 
   const isMatching = await bcrypt.compare(password, user.password);
   if (isMatching) {
+    if (user.token) {
+      try {
+        // Verificăm dacă token-ul existent este valid
+        jwt.verify(user.token, secretForToken);
+        return user.token; // Returnăm token-ul existent dacă este valid
+      } catch (err) {
+        // Token-ul existent este invalid, generăm unul nou
+        console.error("Existing token is invalid, generating a new one.");
+      }
+    }
+    // Generăm un token nou
     const token = jwt.sign({ data: user }, secretForToken, { expiresIn: "1h" });
     await User.findOneAndUpdate({ email: email }, { token: token });
     return token;
@@ -40,30 +51,56 @@ async function login(data) {
   }
 }
 
+// async function signup(data) {
+//   const saltRounds = 10;
+//   const encryptedPassword = await bcrypt.hash(data.password, saltRounds);
+//   const userAvatar = gravatar.url(data.email);
+//   const token = uuidv4();
+//   const newUser = new User({
+//     email: data.email,
+//     password: encryptedPassword,
+//     subscription: "starter",
+//     token: null,
+//     avatarURL: userAvatar,
+//     verificationToken: token,
+//     verify: false,
+//   });
+
+//   sendEmailTo(data.email, token);
+
+//   return User.create(newUser);
+// }
+
 async function signup(data) {
   const saltRounds = 10;
   const encryptedPassword = await bcrypt.hash(data.password, saltRounds);
   const userAvatar = gravatar.url(data.email);
-  const token = uuidv4();
+  const verificationToken = uuidv4();
+
   const newUser = new User({
     email: data.email,
     password: encryptedPassword,
     subscription: "starter",
-    token: null,
+    token: null, // Inițial token-ul este null
     avatarURL: userAvatar,
-    verificationToken: token,
+    verificationToken: verificationToken,
     verify: false,
   });
 
-  sendEmailTo(data.email, token);
+  const savedUser = await newUser.save();
 
-  return User.create(newUser);
-}
+  // Generăm token-ul JWT pentru utilizatorul nou creat
+  const token = jwt.sign({ data: savedUser }, secretForToken, {
+    expiresIn: "1h",
+  });
 
-async function updateToken(email, token) {
-  token = token || uuidv4();
-  await User.findOneAndUpdate({ email }, { verificationToken: token });
-  sendEmailTo(email, token);
+  // Actualizăm utilizatorul cu token-ul generat
+  savedUser.token = token;
+  await savedUser.save();
+
+  sendEmailTo(data.email, verificationToken);
+
+  return token; // Returnăm token-ul
 }
 
 function getPayloadFromJWT(token) {
