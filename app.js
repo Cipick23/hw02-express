@@ -24,8 +24,22 @@ const options = {
       version: "1.0.0",
       description: "API pentru autentificarea și înregistrarea utilizatorilor",
     },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
-  apis: ["./routes/api/auth.js"], // Specificarea calei către fișierele cu rutare
+  apis: ["./routes/api/auth.js"],
 };
 
 const specs = swaggerJsdoc(options);

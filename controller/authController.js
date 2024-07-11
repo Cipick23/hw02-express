@@ -4,7 +4,7 @@ import "dotenv/config";
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import passport from "passport";
-import { STATUS_CODES } from "../utils/constants.js";
+// import { STATUS_CODES } from "../utils/constants.js";
 import gravatar from "gravatar";
 import { v4 as uuidv4 } from "uuid";
 import sendEmailTo from "../utils/sendmail.js";
@@ -51,26 +51,6 @@ async function login(data) {
   }
 }
 
-// async function signup(data) {
-//   const saltRounds = 10;
-//   const encryptedPassword = await bcrypt.hash(data.password, saltRounds);
-//   const userAvatar = gravatar.url(data.email);
-//   const token = uuidv4();
-//   const newUser = new User({
-//     email: data.email,
-//     password: encryptedPassword,
-//     subscription: "starter",
-//     token: null,
-//     avatarURL: userAvatar,
-//     verificationToken: token,
-//     verify: false,
-//   });
-
-//   sendEmailTo(data.email, token);
-
-//   return User.create(newUser);
-// }
-
 async function signup(data) {
   const saltRounds = 10;
   const encryptedPassword = await bcrypt.hash(data.password, saltRounds);
@@ -110,6 +90,7 @@ function getPayloadFromJWT(token) {
     return payload;
   } catch (err) {
     console.error(err);
+    return null; // Returnează null dacă token-ul nu este valid
   }
 }
 

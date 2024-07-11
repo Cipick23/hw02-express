@@ -1,5 +1,4 @@
 // auth.js
-
 import express from "express";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
@@ -19,8 +18,22 @@ const options = {
       version: "1.0.0",
       description: "API pentru autentificarea și înregistrarea utilizatorilor",
     },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
-  apis: ["./routes/api/auth.js"], // Specificarea calei către fișierele cu rutare
+  apis: ["./routes/api/auth.js"],
 };
 
 const specs = swaggerJsdoc(options);
@@ -231,29 +244,51 @@ router.post("/signup", async (req, res, next) => {
 
 // GET /api/users/logout
 /**
+/**
  * @swagger
  * /api/users/logout:
  *   get:
  *     summary: Log out the current user.
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       204:
  *         description: Successfully logged out.
  */
 router.get("/logout", AuthController.validateAuth, async (req, res) => {
   try {
-    const header = req.get("authorization");
+    const header = req.get("Authorization");
     if (!header) {
-      throw new Error("Authentication is required for this route.");
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Unauthorized",
+        data: "Unauthorized",
+      });
     }
 
     const token = header.split(" ")[1];
     const payload = AuthController.getPayloadFromJWT(token);
 
+    if (!payload) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Invalid token",
+        data: "Unauthorized",
+      });
+    }
+
     await User.findOneAndUpdate({ email: payload.data.email }, { token: null });
 
     res.status(204).send();
   } catch (error) {
-    respondWithError(res, error, STATUS_CODES.error);
+    console.error("Error during logout:", error);
+    res.status(500).json({
+      status: "error",
+      code: 500,
+      message: "Internal Server Error",
+    });
   }
 });
 
